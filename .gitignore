@@ -1,4 +1,5 @@
 *.DS_Store
-data/
+/data/
 README.md
 DeepLearningAssignment_Block1_2024__Fall_Semester.pdf
+.ipynb_checkpoints/
