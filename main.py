@@ -238,7 +238,7 @@ def summarize_metric(history, metric):
 
 
 
-def plot_roc_curve(model, X, y, class_names):
+def plot_roc_curve(model, X, y, class_names, title = None):
     """
     Plots the ROC curve for the validation set without the macro-average.
 
@@ -274,7 +274,10 @@ def plot_roc_curve(model, X, y, class_names):
     plt.plot([0, 1], [0, 1], color='grey', linestyle='--')
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic (ROC) Curve')
+    if title:
+        plt.title(f"Receiver Operating Characteristic (ROC) Curve for {title}")
+    else:
+        plt.title('Receiver Operating Characteristic (ROC) Curve')
     plt.legend(loc='best')
     plt.show()
 
@@ -282,7 +285,7 @@ def plot_roc_curve(model, X, y, class_names):
 
 
 
-def plot_confusion_matrix(model, X, y, class_names, normalize=False):
+def plot_confusion_matrix(model, X, y, class_names, normalize=False, title = None):
     """
     Generates and plots the confusion matrix.
 
@@ -317,11 +320,34 @@ def plot_confusion_matrix(model, X, y, class_names, normalize=False):
     ax.spines['right'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.spines['left'].set_visible(False)
-
-    plt.title('Confusion Matrix' + (' (Normalized)' if normalize else ''))
+    if title:
+        plt.title(f"Confusion Matrix for {title}" + (' (Normalized)' if normalize else ''))
+    else:
+        plt.title('Confusion Matrix' + (' (Normalized)' if normalize else ''))
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.show()
+
+def get_metrics(models, X, y, index):
+    """
+    Returns a dataframe with metrics and another with f1 per class.
+
+    Parameters:
+    - models: A list of models
+    - X: Feature data (validation or test set)
+    - y: True labels for the dataset
+    - index: An iterable of class labels
+    """
+    list_metr = []
+    list_f1 = []
+    for model in models:
+        dict = model.evaluate(X, y, batch_size = 32, return_dict = True)
+        dict.pop("loss")
+        list_f1.append(pd.Series(dict.pop("F1Score"), index = index))
+        list_metr.append(dict)
+    f1 = pd.DataFrame(list_f1).T
+    metr = pd.DataFrame(list_metr).T
+    return metr, f1
 
 def baseline():
     baseline = Sequential()
@@ -335,5 +361,8 @@ def baseline():
     baseline.add(layers.Dense(4, activation = "softmax"))
     baseline.compile(optimizer = "adam",
                     loss = "categorical_crossentropy",
-                    metrics = ["accuracy"])
+                    metrics = ["accuracy",
+                               "precision",
+                               "recall",
+                               "F1Score"])
     return baseline
