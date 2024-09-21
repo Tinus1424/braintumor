@@ -10,6 +10,8 @@ def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, ep
     # initialize VGG16 model and make it non trainable. Don't get the last FC layer by setting include_top to false
     base_model = model_class(weights="imagenet", include_top=False, input_shape=(resolution,resolution,3))
     base_model.trainable = False 
+    for layer in base_model.layers:
+        base_model.trainable = False
     
     # initialise model 
     model = Sequential()
@@ -24,7 +26,7 @@ def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, ep
     
     # add base model to be used for transfer learning
     model.add(base_model)
-    model.add(layers.GlobalAveragePooling2D())
+    model.add(layers.Flatten())
         
     model.add(layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.01)))
     
