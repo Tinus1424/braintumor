@@ -216,7 +216,7 @@ def summarize_metric(history, metric):
     """Plots a given metric for a given model history"""
 
     plt.figure(figsize=(3, 2))
-    plt.title('Baseline Model Training and Validation Loss')
+    plt.title(f'Baseline Model Training and Validation {metric}')
     plt.plot(range(1,len(history.history[metric]) + 1),history.history[metric], color='red', label=f'Train {metric}')
     plt.plot(range(1,len(history.history[f'val_{metric}']) + 1),history.history[f'val_{metric}'], color='green', label=f'Validation {metric}')
     ax = plt.gca()
