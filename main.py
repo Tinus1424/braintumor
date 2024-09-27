@@ -5,6 +5,8 @@ import pandas as pd
 import seaborn as sns 
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import keras.backend as K
+
 from sklearn.metrics import roc_curve, auc, confusion_matrix
 from sklearn.preprocessing import label_binarize
 
@@ -12,14 +14,7 @@ from tensorflow.keras import Sequential, Input, layers
 from keras.optimizers import Adam, Adagrad, Adadelta, SGD 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-seed = 42
-np.random.seed(seed)
-random.seed(seed)
-tf.random.set_seed(seed)
-
-# Preprocessing functions
-
-def add_noise(img):
+def add_noise(img):    
     std_coeff = 70*np.random.random()
     noise = np.random.normal(0, std_coeff, img.shape)
     img += noise
@@ -28,12 +23,19 @@ def add_noise(img):
 
 image_res = 30
 def get_images(train_dir: str, test_dir: str):
-    datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=add_noise)
 
+    """
+    Extracts the images from the generator
+    
+    Parameters:
+    - train_dir: Directory of the trainset
+    - test_dir: Directory of the testset
+    """
+    
+    datagen = ImageDataGenerator(rescale=1./255, preprocessing_function=add_noise)
     img_height, img_width = image_res, image_res
     batch_size = 32
 
-    # Load training data
     train_data = datagen.flow_from_directory(
         train_dir,
         target_size=(img_height, img_width),
@@ -41,10 +43,8 @@ def get_images(train_dir: str, test_dir: str):
         class_mode='categorical',
         shuffle=True,
         color_mode='grayscale',
-        #seed=seed
     )
 
-    # Load test data
     test_data = datagen.flow_from_directory(
         test_dir,
         target_size=(img_height, img_width),
@@ -56,13 +56,15 @@ def get_images(train_dir: str, test_dir: str):
 
     return train_data, test_data
 
-# Plotting functions
-
-
 def visualize_batch(df):
 
-    """Randomly select 15 samples from the dataset and display the image
-    along with its corresponding label as text on top of the image"""
+    """
+    Randomly select 15 samples from the dataset and display the image
+    along with its corresponding label as text on top of the image
+
+    Parameters:
+    - df: A data generator
+    """
 
     #Iterating through the different batches
     image_batch, label_batch = next(df)
@@ -95,30 +97,34 @@ def visualize_batch(df):
     plt.tight_layout()
     plt.show()
 
-def plot_class_distribution(train_data, test_data):
-
-    """Creates a bar plot to visualize class distribution"""
-
-    for data in [("Training", train_data), ("Test", test_data)]:
-      class_labels = list(data[1].class_indices.keys())
+def plot_class_dist(ax, data, title):
+    """
+    Helper function for plotting class distribtuions
     
-      class_counts = [np.sum(data[1].labels == i) for i in range(len(class_labels))]
-    
-      plt.figure(figsize=(8, 6))
-      bars = plt.bar(class_labels, class_counts)
-      plt.xlabel("Class Labels")
-      plt.ylabel("Number of Samples")
-      plt.title(f"Class Label Distribution for {data[0]} dataset")
-    
-      for bar in bars:
-          yval = bar.get_height()
-          plt.text(bar.get_x() + bar.get_width()/2, yval, int(yval), ha='center', va='bottom')
+    Parameters:
+    - ax: Axis to which the plot should go
+    - data: Data to be plotted
+    - title: Title of the dataset 
+    """
+    labels = data.class_indices.keys()
+    counts = [np.sum(data.labels == i) for i in range(len(labels))]
 
-# Training and evaluation functions
+    ax.bar(labels, counts)
+    ax.set_xlabel("Class Labels")
+    ax.set_ylabel("Number of Samples")
+    ax.set_title(f"Class Label Distribution for {title} dataset")
+
+
 
 def train_val_split(df,val_split = 0.2):
 
-    """Creates a training (80%) and validation (20%) split"""
+    """
+    Creates a training and validation split
+    
+    Parameters:
+    - df: Training data
+    - val_split: Size of the validation set
+    """
 
     #Resetting the generator for reproducible results
     df.reset()
@@ -150,13 +156,11 @@ def train_val_split(df,val_split = 0.2):
         if batch < train_batches:
             x_train.append(x)
             y_train.append(y)
-
         else:
             x_val.append(x)
             y_val.append(y)
 
     assert len(x_train) + len(x_val) == n_batches, 'Error in dividing batches into train and val sets'
-
 
     #Converting the lists into arrays suited for Tensorflow
     x_train = tf.concat(x_train, axis = 0)
@@ -172,14 +176,17 @@ def train_val_split(df,val_split = 0.2):
 
     #Testing to see if all the samples are included
     assert x_train.shape[0] + x_val.shape[0] == n_samples, 'Error, not all samples included'
-
-
-
+    
     return x_train, y_train, x_val, y_val
 
-def test_splits(df):
+def convert_test(df):
 
-    """Converts test data to numpy array"""
+    """
+    Converts test data to numpy array
+    
+    Parameters:
+    - df: Testset
+    """
     #Resetting the generator for reproducible results
     df.reset()
 
@@ -213,7 +220,13 @@ def test_splits(df):
     return x_test, y_test
 
 def summarize_metric(history, metric):
-    """Plots a given metric for a given model history"""
+    """
+    Plots a given metric for a given model history
+    
+    Parameters:
+    - history: keras.History object
+    - metric: Metric of choice
+    """
 
     plt.figure(figsize=(3, 2))
     plt.title(f'Baseline Model Training and Validation {metric}')
@@ -235,8 +248,6 @@ def summarize_metric(history, metric):
     plt.legend(loc='upper right', fontsize='x-small')
     plt.show()
     return
-
-
 
 def plot_roc_curve(model, X, y, class_names, title = None):
     """
@@ -348,6 +359,33 @@ def get_metrics(models, X, y, index):
     f1 = pd.DataFrame(list_f1).T
     metr = pd.DataFrame(list_metr).T
     return metr, f1
+
+
+def precision(y_true, y_pred):
+    """Precision metric.
+    Only computes a batch-wise average of precision.
+    Computes the precision, a metric for multi-label classification of
+    how many selected items are relevant.
+    """
+    true_positives = np.sum(np.round(np.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = np.sum(np.round(np.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    return precision
+
+
+def recall(y_true, y_pred):
+    """Recall metric.
+    Only computes a batch-wise average of recall.
+    Computes the recall, a metric for multi-label classification of
+    how many relevant items are selected.
+    """
+    true_positives = np.sum(np.round(np.clip(y_true * y_pred, 0, 1)))
+    possible_positives = np.sum(np.round(np.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
+
+
+
 
 def baseline():
     baseline = Sequential()
