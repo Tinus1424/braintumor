@@ -6,7 +6,12 @@ from keras_tuner import HyperModel, RandomSearch, Hyperband
 # keras tuner selects a combination of all hyperparameters at each run from the available options.
 def model_hyperparameter_tuning(hp):
 
-    """Selects a combination of all hyperparameters at each run from the available options """
+    """
+    Selects a combination of all hyperparameters at each run from the available options
+    
+    Parameters:
+    - hp: Hyperparameters to tune
+    """
 
     # Initialize sequential model
     model = Sequential()
@@ -76,14 +81,16 @@ def model_hyperparameter_tuning(hp):
 
 def tune_hyperparameters(model_function, project_name):
     
-    """Function to perform hyperparameter tuning using the Hyperband search algorithm.
+    """
+    Performs hyperparameter tuning using the Hyperband search algorithm.
     
-    Arguments:
-    model_function: The function defining the model 
-    project_name: A unique name for the project to save results, change this for every unique run
+    Parameters:
+    - model_function: The function defining the model 
+    - project_name: A unique name for the project to save results, change this for every unique run
     
     Returns:
-    tuner: keras tuner object """
+    - tuner: keras tuner object
+    """
     
     # Initialize hyperband tuner.
     tuner = Hyperband(
@@ -115,9 +122,9 @@ def print_tuning_summary(tuner, project_name):
     """
     Print results of hyperparameter tuning amd save to csv
     
-    Args:
-    tuner: tuner object
-    project_name: projec name to use for saving csv
+    Parameters:
+    - tuner: tuner object
+    - project_name: projec name to use for saving csv
     """
     trials = tuner.oracle.trials
 

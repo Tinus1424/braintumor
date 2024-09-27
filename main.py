@@ -5,13 +5,20 @@ import pandas as pd
 import seaborn as sns 
 import tensorflow as tf
 import matplotlib.pyplot as plt
+
 from sklearn.metrics import roc_curve, auc, confusion_matrix
 from sklearn.preprocessing import label_binarize
 
-from tensorflow.keras import Sequential, Input, layers, optimizers, callbacks
-from keras.optimizers import Adam, Adagrad, Adadelta, SGD 
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from keras.optimizers import Adam, Adagrad, Adadelta, SGD
+from tensorflow.keras import Sequential, Input, layers, optimizers, callbacks, regularizers
+
 from tensorflow.keras.models import load_model
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+
+
+
 
 def add_noise(img):
     std_coeff = 70*np.random.random()

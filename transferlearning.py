@@ -1,11 +1,10 @@
-from tensorflow.keras.applications import ResNet50, DenseNet121
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.applications.vgg16 import VGG16
-from tensorflow.keras import Sequential, Input, layers
-from tensorflow.keras import regularizers
+from main import * 
 import tensorflow as tf
-def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, epochs=10, batch_size=32, optimizer: str = "adam"):
 
+from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow.keras.applications import ResNet50, DenseNet121
+
+def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, epochs=10, batch_size=32, optimizer: str = "adam"):
     
     # initialize VGG16 model and make it non trainable. Don't get the last FC layer by setting include_top to false
     base_model = model_class(weights="imagenet", include_top=False, input_shape=(resolution,resolution,3))
