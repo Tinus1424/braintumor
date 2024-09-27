@@ -10,9 +10,11 @@ import keras.backend as K
 from sklearn.metrics import roc_curve, auc, confusion_matrix
 from sklearn.preprocessing import label_binarize
 
-from tensorflow.keras import Sequential, Input, layers
+from tensorflow.keras import Sequential, Input, layers, optimizers, callbacks
 from keras.optimizers import Adam, Adagrad, Adadelta, SGD 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import load_model
+
 
 def add_noise(img):    
     std_coeff = 70*np.random.random()
@@ -219,35 +221,50 @@ def convert_test(df):
     assert  x_test.shape[0] == n_samples, 'Error, not all samples included'
     return x_test, y_test
 
-def summarize_metric(history, metric):
-    """
-    Plots a given metric for a given model history
+
+
+def summarize_metric(trained_model, metrics=['accuracy', 'loss']):
+    """Plots metrics of the train and validation set for a trained model\n
+    BEWARE: metric list can be changed but F1-score does not seem to be plottable due to the way Keras saves the information"""
     
-    Parameters:
-    - history: keras.History object
-    - metric: Metric of choice
-    """
+    sns.set_style('darkgrid')
+    
+    n_metrics = len(metrics)
+    fig, axes = plt.subplots(n_metrics, 1, figsize=(8, 4 * n_metrics))
 
-    plt.figure(figsize=(3, 2))
-    plt.title(f'Baseline Model Training and Validation {metric}')
-    plt.plot(range(1,len(history.history[metric]) + 1),history.history[metric], color='red', label=f'Train {metric}')
-    plt.plot(range(1,len(history.history[f'val_{metric}']) + 1),history.history[f'val_{metric}'], color='green', label=f'Validation {metric}')
-    ax = plt.gca()
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    plt.xlabel('Epochs')
-    plt.ylabel(metric)
-    plt.grid(True, which='both', linestyle='-')
-    val_metric = history.history[f'val_{metric}']
-    if metric == "loss":
-        best_epoch = val_metric.index(min(val_metric)) + 1
-    else:
-        best_epoch = val_metric.index(max(val_metric)) + 1
+    if n_metrics == 1: 
+        axes = [axes]
+    for i, metric in enumerate(metrics): 
+        ax = axes[i]
 
-    plt.scatter(best_epoch, val_metric[best_epoch - 1], color='blue', s=20, label=f'best epoch= {best_epoch}')
-    plt.legend(loc='upper right', fontsize='x-small')
+        # Create x-axis values starting from 1
+        epochs = range(1, len(trained_model.history[metric]) + 1)
+
+        # Training metric
+        ax.plot(epochs, trained_model.history[metric], label=f'Training {metric}', color='blue', linestyle='--')
+ 
+        # Validation metric
+        val_metric = f'val_{metric}'
+        if val_metric in trained_model.history: 
+            ax.plot(epochs, trained_model.history[val_metric], label=f'Validation {metric}', color='red')
+
+            # Plotting best epochs
+            if metric == 'loss': 
+                best_epoch = np.argmin(trained_model.history[val_metric])   
+                best_value = trained_model.history[val_metric][best_epoch]
+                ax.scatter(best_epoch + 1, best_value, color='green', s=100, label=f'Best epoch for {metric} ({best_epoch + 1})')
+            else: 
+                best_epoch = np.argmax(trained_model.history[val_metric])
+                best_value = trained_model.history[val_metric][best_epoch]
+                ax.scatter(best_epoch + 1, best_value, color='green', s=100, label=f'Best epoch for {metric} ({best_epoch + 1})')
+
+        ax.set_title(f'{metric}')
+        ax.set_xlabel('Epochs')
+        ax.set_ylabel(metric)
+        ax.legend()
+
+    plt.tight_layout()
     plt.show()
-    return
 
 def plot_roc_curve(model, X, y, class_names, title = None):
     """
@@ -277,7 +294,7 @@ def plot_roc_curve(model, X, y, class_names, title = None):
         roc_auc[i] = auc(fpr[i], tpr[i])
 
     # Plot ROC curves
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(10, 4))
 
     for i, class_name in enumerate(class_names):
         plt.plot(fpr[i], tpr[i], lw=2, label='ROC curve of class {} (area = {:.2f})'.format(class_name, roc_auc[i]))
@@ -320,7 +337,7 @@ def plot_confusion_matrix(model, X, y, class_names, normalize=False, title = Non
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
     # Plot the confusion matrix using seaborn heatmap
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(8, 6))
     ax = sns.heatmap(cm, annot=True, fmt='.2f' if normalize else 'd', cmap='Blues',
                     xticklabels=class_names, yticklabels=class_names)
 
@@ -404,3 +421,38 @@ def baseline():
                                "recall",
                                "F1Score"])
     return baseline
+
+
+def hyperparam(activation = 'relu'):
+    
+
+    model = Sequential()
+    model.add(Input(shape = (30, 30, 1)))
+
+    model.add(layers.Conv2D(128, (3, 3), activation=activation, padding='same'))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Conv2D(64, (3, 3), activation=activation, padding='same'))
+    model.add(layers.BatchNormalization())
+    model.add(layers.MaxPooling2D((2, 2), strides=2))
+
+    model.add(layers.Conv2D(32, (3, 3), activation=activation, padding='same'))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Conv2D(16, (3, 3), activation= activation, padding='same'))
+    model.add(layers.BatchNormalization())
+    model.add(layers.MaxPooling2D(2, 2))
+
+    model.add(layers.Flatten())
+    model.add(layers.Dense(256, activation=activation))
+    model.add(layers.Dropout(rate = 0.5))
+    model.add(layers.Dense(32, activation = activation))
+    model.add(layers.Dropout(rate = 0.25))
+    model.add(layers.Dense(16, activation = activation))
+    model.add(layers.Dense(4, activation = "softmax"))
+
+    model.compile(optimizer = optimizers.Adam(learning_rate= 0.001), 
+                loss = "categorical_crossentropy",
+                metrics = ["accuracy",
+                            "precision",
+                            "recall",
+                            "F1Score"])
+    return model
