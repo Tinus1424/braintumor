@@ -13,14 +13,6 @@ from keras.optimizers import Adam, Adagrad, Adadelta, SGD
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import load_model
 
-
-seed = 42
-np.random.seed(seed)
-random.seed(seed)
-tf.random.set_seed(seed)
-
-# Preprocessing functions
-
 def add_noise(img):
     std_coeff = 70*np.random.random()
     noise = np.random.normal(0, std_coeff, img.shape)
@@ -58,13 +50,15 @@ def get_images(train_dir: str, test_dir: str):
 
     return train_data, test_data
 
-# Plotting functions
-
-
 def visualize_batch(df):
 
-    """Randomly select 15 samples from the dataset and display the image
-    along with its corresponding label as text on top of the image"""
+    """
+    Randomly select 15 samples from the dataset and display the image
+    along with its corresponding label as text on top of the image
+    
+    Parameters:
+    - df: Data to display the image from
+    """
 
     #Iterating through the different batches
     image_batch, label_batch = next(df)
@@ -97,30 +91,36 @@ def visualize_batch(df):
     plt.tight_layout()
     plt.show()
 
-def plot_class_distribution(train_data, test_data):
+def plot_class_dist(ax, data, title):
+    
+    """
+    Helper function for creating class distribution plot.
 
-    """Creates a bar plot to visualize class distribution"""
+    Parameters:
+    - ax: ax to plot on
+    - data: Data to plot
+    - title: Name of the dataset
+    """
+    
+    class_labels = list(data.class_indices.keys())
+    class_counts = [np.sum(data.labels == i) for i in range(len(class_labels))]
 
-    for data in [("Training", train_data), ("Test", test_data)]:
-      class_labels = list(data[1].class_indices.keys())
-    
-      class_counts = [np.sum(data[1].labels == i) for i in range(len(class_labels))]
-    
-      plt.figure(figsize=(8, 6))
-      bars = plt.bar(class_labels, class_counts)
-      plt.xlabel("Class Labels")
-      plt.ylabel("Number of Samples")
-      plt.title(f"Class Label Distribution for {data[0]} dataset")
-    
-      for bar in bars:
-          yval = bar.get_height()
-          plt.text(bar.get_x() + bar.get_width()/2, yval, int(yval), ha='center', va='bottom')
+    ax.bar(class_labels, class_counts)
+    ax.set_xlabel("Class Labels")
+    ax.set_ylabel("Number of Samples")
+    ax.set_title(f"Class Label Distribution for {title} dataset")
 
 # Training and evaluation functions
 
 def train_val_split(df,val_split = 0.2):
 
-    """Creates a training (80%) and validation (20%) split"""
+    """
+    Splits the trainingset into a training and validation split
+
+    Parameters:
+    - df: Training data to split
+    - val_splt: Size of the validation 
+    """
 
     #Resetting the generator for reproducible results
     df.reset()
@@ -181,7 +181,13 @@ def train_val_split(df,val_split = 0.2):
 
 def test_splits(df):
 
-    """Converts test data to numpy array"""
+    """
+    Converts test data to numpy array
+    
+    Parameters:
+    - df: Testdata
+    """
+    
     #Resetting the generator for reproducible results
     df.reset()
 
@@ -216,8 +222,16 @@ def test_splits(df):
 
 
 def summarize_metric(trained_model, metrics=['accuracy', 'loss']):
-    """Plots metrics of the train and validation set for a trained model\n
-    BEWARE: metric list can be changed but F1-score does not seem to be plottable due to the way Keras saves the information"""
+    
+    """
+    Plots metrics of the train and validation set for a trained model
+    BEWARE: metric list can be changed but F1-score does not seem to be 
+    plottable due to the way Keras saves the information
+
+    Parameters:
+    - trained_model: Keras history object
+    - metrics: Metric to plot
+    """
     
     sns.set_style('darkgrid')
     
@@ -351,6 +365,7 @@ def plot_confusion_matrix(model, X, y, class_names, normalize=False, title = Non
     plt.show()
 
 def get_metrics(models, X, y, index):
+    
     """
     Returns a dataframe with metrics and another with f1 per class.
 
