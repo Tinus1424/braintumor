@@ -16,10 +16,6 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-
-
-
-
 def add_noise(img):
     std_coeff = 70*np.random.random()
     noise = np.random.normal(0, std_coeff, img.shape)
@@ -371,28 +367,6 @@ def plot_confusion_matrix(model, X, y, class_names, normalize=False, title = Non
     plt.ylabel('True')
     plt.show()
 
-def get_metrics(models, X, y, index):
-    
-    """
-    Returns a dataframe with metrics and another with f1 per class.
-
-    Parameters:
-    - models: A list of models
-    - X: Feature data (validation or test set)
-    - y: True labels for the dataset
-    - index: An iterable of class labels
-    """
-    list_metr = []
-    list_f1 = []
-    for model in models:
-        dict = model.evaluate(X, y, batch_size = 32, return_dict = True)
-        dict.pop("loss")
-        list_f1.append(pd.Series(dict.pop("F1Score"), index = index))
-        list_metr.append(dict)
-    f1 = pd.DataFrame(list_f1).T
-    metr = pd.DataFrame(list_metr).T
-    return metr, f1
-
 def baseline():
     baseline = Sequential()
     baseline.add(Input(shape = (30, 30, 1)))
@@ -410,38 +384,3 @@ def baseline():
                                "recall",
                                "F1Score"])
     return baseline
-
-
-def hyperparam(activation = 'relu'):
-    
-
-    model = Sequential()
-    model.add(Input(shape = (30, 30, 1)))
-
-    model.add(layers.Conv2D(128, (3, 3), activation=activation, padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(64, (3, 3), activation=activation, padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.MaxPooling2D((2, 2), strides=2))
-
-    model.add(layers.Conv2D(32, (3, 3), activation=activation, padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(16, (3, 3), activation= activation, padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.MaxPooling2D(2, 2))
-
-    model.add(layers.Flatten())
-    model.add(layers.Dense(256, activation=activation))
-    model.add(layers.Dropout(rate = 0.5))
-    model.add(layers.Dense(32, activation = activation))
-    model.add(layers.Dropout(rate = 0.25))
-    model.add(layers.Dense(16, activation = activation))
-    model.add(layers.Dense(4, activation = "softmax"))
-
-    model.compile(optimizer = optimizers.Adam(learning_rate= 0.001), 
-                loss = "categorical_crossentropy",
-                metrics = ["accuracy",
-                            "precision",
-                            "recall",
-                            "F1Score"])
-    return model
