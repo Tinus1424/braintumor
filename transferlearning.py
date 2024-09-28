@@ -1,10 +1,14 @@
-from main import * 
 import tensorflow as tf
 
-from tensorflow.keras.applications.vgg16 import VGG16
-from tensorflow.keras.applications import ResNet50, DenseNet121
+from keras.optimizers import Adam, Adagrad, Adadelta, SGD
+from tensorflow.keras import Sequential, Input, layers, optimizers, callbacks, regularizers
 
-def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, epochs=10, batch_size=32, optimizer: str = "adam"):
+from tensorflow.keras.callbacks import EarlyStopping
+
+
+
+
+def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, epochs=10, batch_size=32, optimizer: str = "adam", add_extra_layer: bool = False):
     
     # initialize VGG16 model and make it non trainable. Don't get the last FC layer by setting include_top to false
     base_model = model_class(weights="imagenet", include_top=False, input_shape=(resolution,resolution,3))
@@ -26,16 +30,22 @@ def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, ep
     # add base model to be used for transfer learning
     model.add(base_model)
     model.add(layers.Flatten())
-        
-    model.add(layers.Dense(128, activation='relu', kernel_regularizer=regularizers.l2(0.01)))
-    
+    model.add(layers.Dense(128, activation='relu'))
+    if add_extra_layer:
+        model.add(layers.Dropout(0.3))
+        model.add(layers.Dense(64, activation='relu'))
     model.add(layers.Dense(4, activation='softmax'))
+        
+    
     
     # compile model 
     model.compile(
         optimizer=optimizer,
         loss='categorical_crossentropy',
-        metrics=['accuracy'],
+        metrics = ["accuracy",
+                            "precision",
+                            "recall",
+                            "F1Score"],
     )
     
     # add early stopping if accuracy does not change for 3 epochs
