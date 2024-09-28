@@ -3,6 +3,7 @@ import random
 import numpy as np
 import pandas as pd
 import seaborn as sns 
+import keras
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
@@ -319,6 +320,7 @@ def plot_roc_curve(model, X, y, class_names, title = None):
         plt.title('Receiver Operating Characteristic (ROC) Curve')
     plt.legend(loc='best')
     plt.show()
+    plt.savefig("ROC.png")
 
     return roc_auc
 
@@ -366,6 +368,29 @@ def plot_confusion_matrix(model, X, y, class_names, normalize=False, title = Non
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.show()
+    plt.savefig("CM.png")
+
+def get_metrics(models, X, y, index):
+    
+    """
+    Returns a dataframe with metrics and another with f1 per class.
+
+    Parameters:
+    - models: A list of models
+    - X: Feature data (validation or test set)
+    - y: True labels for the dataset
+    - index: An iterable of class labels
+    """
+    list_metr = []
+    list_f1 = []
+    for model in models:
+        dict = model.evaluate(X, y, batch_size = 32, return_dict = True)
+        dict.pop("loss")
+        list_f1.append(pd.Series(dict.pop("F1Score"), index = index))
+        list_metr.append(dict)
+    f1 = pd.DataFrame(list_f1).T
+    metr = pd.DataFrame(list_metr).T
+    return metr, f1
 
 def baseline():
     baseline = Sequential()
