@@ -1,3 +1,5 @@
+# Group 15: Hyperparameter tuning file
+
 from main import *
 
 from keras.callbacks import ReduceLROnPlateau, Callback

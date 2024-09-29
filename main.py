@@ -1,3 +1,5 @@
+# Group 15: main functions file
+
 import os
 import random
 import numpy as np
