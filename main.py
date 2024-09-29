@@ -392,20 +392,4 @@ def get_metrics(models, X, y, index):
     metr = pd.DataFrame(list_metr).T
     return metr, f1
 
-def baseline():
-    baseline = Sequential()
-    baseline.add(Input(shape = (30, 30, 1)))
-    baseline.add(layers.Conv2D(32, (3, 3), activation = "relu"))
-    baseline.add(layers.MaxPooling2D((2, 2)))
-    baseline.add(layers.Conv2D(32, (3, 3), activation = "relu"))
-    baseline.add(layers.MaxPooling2D((2, 2)))
-    baseline.add(layers.Flatten())
-    baseline.add(layers.Dense(32, activation = "relu"))
-    baseline.add(layers.Dense(4, activation = "softmax"))
-    baseline.compile(optimizer = "adam",
-                    loss = "categorical_crossentropy",
-                    metrics = ["accuracy",
-                               "precision",
-                               "recall",
-                               "F1Score"])
-    return baseline
+

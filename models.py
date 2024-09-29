@@ -2,12 +2,32 @@ from main import *
 from tensorflow.keras.applications.vgg16 import VGG16
 from tensorflow.keras.applications import ResNet50, DenseNet121
 
-
-metrics = ["accuracy", 
-           keras.metrics.Precision(class_id = 2), 
-           keras.metrics.Recall(class_id = 2),
+metrics = ["accuracy",
+            keras.metrics.Precision(class_id = 0),
+            keras.metrics.Recall(class_id = 0),
+            keras.metrics.Precision(class_id = 1),
+            keras.metrics.Recall(class_id = 1),
+            keras.metrics.Precision(class_id = 2),
+            keras.metrics.Recall(class_id = 2),
+            keras.metrics.Precision(class_id = 3),
+            keras.metrics.Recall(class_id = 3),
            "F1Score"]
 
+def baseline():
+    baseline = Sequential()
+    baseline.add(Input(shape = (30, 30, 1)))
+    baseline.add(layers.Conv2D(32, (3, 3), activation = "relu"))
+    baseline.add(layers.MaxPooling2D((2, 2)))
+    baseline.add(layers.Conv2D(32, (3, 3), activation = "relu"))
+    baseline.add(layers.MaxPooling2D((2, 2)))
+    baseline.add(layers.Flatten())
+    baseline.add(layers.Dense(32, activation = "relu"))
+    baseline.add(layers.Dense(4, activation = "softmax"))
+    baseline.compile(optimizer = "adam",
+                    loss = "categorical_crossentropy",
+                    metrics = metrics)
+    return baseline
+    
 def cnn300k(activation = 'relu'):
 
     model = Sequential()
