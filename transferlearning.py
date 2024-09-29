@@ -14,7 +14,7 @@ def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, ep
     base_model = model_class(weights="imagenet", include_top=False, input_shape=(resolution,resolution,3))
     base_model.trainable = False 
     for layer in base_model.layers:
-        base_model.trainable = False
+        layer.trainable = False
     
     # initialise model 
     model = Sequential()
@@ -49,7 +49,7 @@ def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, ep
     )
     
     # add early stopping if accuracy does not change for 3 epochs
-    early_stopping = EarlyStopping(monitor='val_accuracy', mode='max', patience=3,  restore_best_weights=True)
+    early_stopping = EarlyStopping(monitor='val_loss', mode='max', patience=3,  restore_best_weights=True)
     
     # fit the model 
     model.fit(X_train, y_train, epochs=epochs, validation_data = (X_val, y_val), batch_size=batch_size, callbacks=[early_stopping])
