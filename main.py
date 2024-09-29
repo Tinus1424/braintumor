@@ -3,6 +3,7 @@ import random
 import numpy as np
 import pandas as pd
 import seaborn as sns 
+import keras
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
@@ -15,10 +16,6 @@ from tensorflow.keras import Sequential, Input, layers, optimizers, callbacks, r
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
-
-
-
 
 def add_noise(img):
     std_coeff = 70*np.random.random()
@@ -323,6 +320,7 @@ def plot_roc_curve(model, X, y, class_names, title = None):
         plt.title('Receiver Operating Characteristic (ROC) Curve')
     plt.legend(loc='best')
     plt.show()
+    plt.savefig("ROC.png")
 
     return roc_auc
 
@@ -370,6 +368,7 @@ def plot_confusion_matrix(model, X, y, class_names, normalize=False, title = Non
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.show()
+    plt.savefig("CM.png")
 
 def get_metrics(models, X, y, index):
     
@@ -393,55 +392,4 @@ def get_metrics(models, X, y, index):
     metr = pd.DataFrame(list_metr).T
     return metr, f1
 
-def baseline():
-    baseline = Sequential()
-    baseline.add(Input(shape = (30, 30, 1)))
-    baseline.add(layers.Conv2D(32, (3, 3), activation = "relu"))
-    baseline.add(layers.MaxPooling2D((2, 2)))
-    baseline.add(layers.Conv2D(32, (3, 3), activation = "relu"))
-    baseline.add(layers.MaxPooling2D((2, 2)))
-    baseline.add(layers.Flatten())
-    baseline.add(layers.Dense(32, activation = "relu"))
-    baseline.add(layers.Dense(4, activation = "softmax"))
-    baseline.compile(optimizer = "adam",
-                    loss = "categorical_crossentropy",
-                    metrics = ["accuracy",
-                               "precision",
-                               "recall",
-                               "F1Score"])
-    return baseline
 
-
-def hyperparam(activation = 'relu'):
-    
-
-    model = Sequential()
-    model.add(Input(shape = (30, 30, 1)))
-
-    model.add(layers.Conv2D(128, (3, 3), activation=activation, padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(64, (3, 3), activation=activation, padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.MaxPooling2D((2, 2), strides=2))
-
-    model.add(layers.Conv2D(32, (3, 3), activation=activation, padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.Conv2D(16, (3, 3), activation= activation, padding='same'))
-    model.add(layers.BatchNormalization())
-    model.add(layers.MaxPooling2D(2, 2))
-
-    model.add(layers.Flatten())
-    model.add(layers.Dense(256, activation=activation))
-    model.add(layers.Dropout(rate = 0.5))
-    model.add(layers.Dense(32, activation = activation))
-    model.add(layers.Dropout(rate = 0.25))
-    model.add(layers.Dense(16, activation = activation))
-    model.add(layers.Dense(4, activation = "softmax"))
-
-    model.compile(optimizer = optimizers.Adam(learning_rate= 0.001), 
-                loss = "categorical_crossentropy",
-                metrics = ["accuracy",
-                            "precision",
-                            "recall",
-                            "F1Score"])
-    return model
