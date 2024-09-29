@@ -8,13 +8,14 @@ from tensorflow.keras.callbacks import EarlyStopping
 
 
 
-def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, epochs=10, batch_size=32, optimizer: str = "adam", add_extra_layer: bool = False):
+def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, epochs=10, batch_size=32, optimizer: str = "adam", add_extra_layer: bool = False, finetune=False):
     
     # initialize VGG16 model and make it non trainable. Don't get the last FC layer by setting include_top to false
     base_model = model_class(weights="imagenet", include_top=False, input_shape=(resolution,resolution,3))
-    base_model.trainable = False 
-    for layer in base_model.layers:
-        layer.trainable = False
+    if not finetune:
+        base_model.trainable = False 
+        for layer in base_model.layers:
+            layer.trainable = False
     
     # initialise model 
     model = Sequential()
@@ -49,7 +50,7 @@ def transfer_learning(model_class, resolution,X_train, y_train, X_val, y_val, ep
     )
     
     # add early stopping if accuracy does not change for 3 epochs
-    early_stopping = EarlyStopping(monitor='val_loss', mode='max', patience=3,  restore_best_weights=True)
+    early_stopping = EarlyStopping(monitor='val_loss', mode='max', patience=4,  restore_best_weights=True)
     
     # fit the model 
     model.fit(X_train, y_train, epochs=epochs, validation_data = (X_val, y_val), batch_size=batch_size, callbacks=[early_stopping])
